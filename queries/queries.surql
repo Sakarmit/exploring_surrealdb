@@ -1,12 +1,12 @@
 -- ============================================================
 -- queries/queries.surql
--- SurrealQL multimodal queries for CS401 project
+-- SurrealQL multimodal queries for learning_management_db project
 -- ============================================================
 -- Run individual queries by selecting a block and executing
 -- via the SurrealDB REPL, CLI, or HTTP /sql endpoint.
 -- ============================================================
 
-USE NS education DB cs401;
+USE NS education DB learning_management_db;
 
 
 -- ════════════════════════════════════════════════════════════
@@ -84,29 +84,29 @@ FROM lecture AS l;
 
 
 -- ════════════════════════════════════════════════════════════
--- QUERY 4: Graph Traversal — Concepts Shared Between
+-- QUERY 4: Graph Traversal —Topics Shared Between
 --          Lectures and Assignments
 -- ════════════════════════════════════════════════════════════
 -- Walk the graph:
---   lecture -[covers]-> concept <-[requires]- assignment
--- Find which concepts appear in BOTH a lecture AND an assignment.
+--   lecture -[covers]-> topic <-[requires]- assignment
+-- Find which topics appear in BOTH a lecture AND an assignment.
 
 SELECT
-    concept.id          AS concept_id,
-    concept.name        AS concept_name,
-    -- All lectures covering this concept
+    topic.id          AS topic_id,
+    topic.name        AS topic_name,
+    -- All lectures covering this topic
     array::group(
-        SELECT VALUE in FROM covers WHERE out = concept.id
+        SELECT VALUE in FROM covers WHERE out = topic.id
     )                   AS covered_by_lectures,
-    -- All assignments requiring this concept
+    -- All assignments requiring this topic
     array::group(
-        SELECT VALUE in FROM requires WHERE out = concept.id
+        SELECT VALUE in FROM requires WHERE out = topic.id
     )                   AS required_by_assignments
-FROM concept
+FROM topic
 WHERE
-    (SELECT count() FROM covers   WHERE out = concept.id) > 0
-AND (SELECT count() FROM requires WHERE out = concept.id) > 0
-ORDER BY concept_name;
+    (SELECT count() FROM covers   WHERE out = topic.id) > 0
+AND (SELECT count() FROM requires WHERE out = topic.id) > 0
+ORDER BY topic_name;
 
 
 -- ════════════════════════════════════════════════════════════
@@ -141,15 +141,15 @@ FROM metadata AS meta;
 -- QUERY 7 (Bonus): Students Scoring Below 75 on Final
 -- ════════════════════════════════════════════════════════════
 -- Identify at-risk students for the final exam, joining with
--- concept coverage so instructors know which topics to review.
+-- topic coverage so instructors know which topics to review.
 
 SELECT
     ss.student_id,
     ss.name,
     ss.final       AS final_score,
     ss.grade,
-    -- Concepts tested in the assignment (via graph)
-    (SELECT ->requires->concept.name AS concepts FROM assignment LIMIT 1) AS tested_concepts
+    -- Topics tested in the assignment (via graph)
+    (SELECT ->requires->topic.name AS topics FROM assignment LIMIT 1) AS tested_topics
 FROM student_score AS ss
 WHERE ss.final < 75
 ORDER BY ss.final ASC;

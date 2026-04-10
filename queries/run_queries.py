@@ -32,7 +32,7 @@ QUERIES = {
             "that mention 'normalization', ranked by relevance."
         ),
         "sql": """
-            USE NS education DB cs401;
+            USE NS education DB learning_management_db;
             LET $keyword = 'normalization';
             SELECT id, title, type, search::score(1) AS relevance_score
             FROM lecture WHERE content @1@ $keyword
@@ -49,7 +49,7 @@ QUERIES = {
             "and enriches with assignment context."
         ),
         "sql": """
-            USE NS education DB cs401;
+            USE NS education DB learning_management_db;
             SELECT
                 student_id, name, assignment_1, assignment_2,
                 midterm, final, grade,
@@ -65,7 +65,7 @@ QUERIES = {
             "material entries to compare topic lists."
         ),
         "sql": """
-            USE NS education DB cs401;
+            USE NS education DB learning_management_db;
             SELECT
                 id AS lecture_id,
                 title AS lecture_title,
@@ -76,27 +76,27 @@ QUERIES = {
         """,
     },
     4: {
-        "title": "Graph Traversal — Concepts Shared by Lectures and Assignments",
+        "title": "Graph Traversal — Topics Shared by Lectures and Assignments",
         "description": (
-            "Traverses the graph to find concepts that appear in both a "
+            "Traverses the graph to find topics that appear in both a "
             "lecture (via covers) and an assignment (via requires)."
         ),
         "sql": """
-            USE NS education DB cs401;
+            USE NS education DB learning_management_db;
             SELECT
-                id AS concept_id,
-                name AS concept_name,
+                id AS topic_id,
+                name AS topic_name,
                 <-covers<-lecture.title AS covered_by_lectures,
                 <-requires<-assignment.title AS required_by_assignments
-            FROM concept
-            ORDER BY concept_name;
+            FROM topic
+            ORDER BY topic_name;
         """,
     },
     5: {
         "title": "Grade Distribution Summary",
         "description": "Aggregates student grades and computes per-grade statistics.",
         "sql": """
-            USE NS education DB cs401;
+            USE NS education DB learning_management_db;
             SELECT
                 grade,
                 count() AS num_students,
@@ -112,7 +112,7 @@ QUERIES = {
         "title": "All Materials Described by Metadata (Graph Traversal)",
         "description": "Follows describes edges from metadata to linked materials.",
         "sql": """
-            USE NS education DB cs401;
+            USE NS education DB learning_management_db;
             SELECT id, course_id, ->describes->*.id AS described_materials
             FROM metadata;
         """,
@@ -121,7 +121,7 @@ QUERIES = {
         "title": "At-Risk Students Scoring Below 75 on Final",
         "description": "Identifies students who may need additional support.",
         "sql": """
-            USE NS education DB cs401;
+            USE NS education DB learning_management_db;
             SELECT student_id, name, final AS final_score, grade
             FROM student_score
             WHERE final < 75

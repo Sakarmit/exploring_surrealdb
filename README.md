@@ -1,6 +1,3 @@
-# CS401 — Multimodal Data Management System with SurrealDB
-
-A 4-week project implementing a multimodal data management system using SurrealDB, demonstrating relational, document, and graph data models in a unified database.
 
 ---
 
@@ -20,7 +17,7 @@ surreal start --user root --pass root memory
 ```bash
 surreal import --conn http://localhost:8000 \
                --user root --pass root \
-               --ns education --db cs401 \
+               --ns education --db learning_management_db \
                schema.surql
 ```
 
@@ -160,7 +157,7 @@ surrealdb_project/
 | User | `root` |
 | Password | `root` |
 | Namespace | `education` |
-| Database | `cs401` |
+| Database | `learning_management_db` |
 
 Override via environment variables or by editing `ingestion/surreal_client.py`.
 

@@ -82,24 +82,24 @@ def insert_batch(client: SurrealClient, table: str, records: list[dict], use_htt
 # ── Graph relationship helpers ────────────────────────────────────────────────
 
 GRAPH_RELATIONS_SQL = """
--- Create concept nodes from lecture topics
+-- Create topic nodes from lecture topics
 LET $topics = SELECT topics FROM lecture;
 FOR $lecture IN (SELECT id, topics FROM lecture) {
     LET $lid = $lecture.id;
     FOR $topic IN $lecture.topics {
-        LET $cid = type::thing('concept', string::lowercase(string::replace($topic, ' ', '_')));
-        INSERT IGNORE INTO concept { id: $cid, name: $topic };
-        RELATE $lid -> covers -> $cid;
+        LET $tid = type::thing('topic', string::lowercase(string::replace($topic, ' ', '_')));
+        INSERT IGNORE INTO topic { id: $tid, name: $topic };
+        RELATE $lid -> covers -> $tid;
     }
 };
 
--- Create concept nodes from assignment concepts
+-- Create topic nodes from assignment concepts
 FOR $asgn IN (SELECT id, concepts FROM assignment) {
     LET $aid = $asgn.id;
     FOR $concept IN $asgn.concepts {
-        LET $cid = type::thing('concept', string::lowercase(string::replace($concept, ' ', '_')));
-        INSERT IGNORE INTO concept { id: $cid, name: $concept };
-        RELATE $aid -> requires -> $cid;
+        LET $tid = type::thing('topic', string::lowercase(string::replace($concept, ' ', '_')));
+        INSERT IGNORE INTO topic { id: $tid, name: $concept };
+        RELATE $aid -> requires -> $tid;
     }
 };
 

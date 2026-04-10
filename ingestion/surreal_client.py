@@ -36,7 +36,7 @@ class SurrealClient:
         user: str = "root",
         password: str = "root",
         namespace: str = "education",
-        database: str = "cs401",
+        database: str = "learning_management_db",
     ):
         self.url = url
         self.user = user
