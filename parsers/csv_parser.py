@@ -53,15 +53,14 @@ def parse_csv(filepathStr: str) -> dict:
             # Generate a stable SurrealDB-style record id
             student_id = record.get("student_id", f"row{i}")
             record["id"] = f"student_score:{student_id}"
-            record["source"] = str(filepath)
+            record["source"] = filepathStr
             record["type"] = "student_score"
             records.append(record)
 
     return {
         "id": f"table:{filepath.stem}",
         "type": "csv_table",
-        "source": str(filepath),
-        "filename": filepath.name,
+        "source": filepathStr,
         "columns": columns,
         "row_count": len(records),
         "records": records,

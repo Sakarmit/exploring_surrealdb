@@ -66,9 +66,13 @@ def safe_parse(label: str, fn, *args):
 def insert(client: SurrealClient, table: str, data: dict, use_http: bool):
     """Insert a single record, choosing SDK vs HTTP path."""
     if use_http:
-        return client.http_create(table, data)
+        res = client.http_create(table, data)
     else:
-        return client.create_sync(table, data)
+        res = client.create_sync(table, data)
+    
+    print(f'[DEBUG] Insert {table} -> {res}')
+
+    return res
 
 
 def insert_batch(client: SurrealClient, table: str, records: list[dict], use_http: bool):

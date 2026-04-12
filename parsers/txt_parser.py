@@ -44,9 +44,8 @@ def parse_txt(filepathStr: str) -> dict:
 
     result = {
         "id": f"assignment:{filepath.stem}",
-        "type": "assignment",
-        "source": str(filepath),
-        "filename": filepath.name,
+        "type": "txt",
+        "source": filepathStr,
         "title": title,
         "content": raw_text,
         "word_count": len(raw_text.split()),

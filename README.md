@@ -21,6 +21,13 @@ surreal import --conn http://localhost:8000 \
                schema.surql
 ```
 
+```bash
+surreal import --endpoint http://localhost:8000 \
+      --user root --pass root \
+      --namespace education --database learning_management_db \
+      schema.surql
+```
+
 ### 4. Run ingestion
 ```bash
 # Dry run (no DB required — just parses and prints)

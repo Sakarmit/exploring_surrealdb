@@ -34,8 +34,7 @@ def parse_image(filepathStr: str) -> dict:
     result = {
         "id": f"image:{filepath.stem}",
         "type": "image",
-        "source": str(filepath),
-        "filename": filepath.name,
+        "source":filepathStr,
         "format": ext.lstrip(".").upper(),
         "file_size_bytes": file_size,
         "width": None,

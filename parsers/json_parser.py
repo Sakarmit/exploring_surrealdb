@@ -73,9 +73,8 @@ def parse_json_metadata(filepathStr: str) -> dict:
 
     return {
         "id": f"metadata:{filepath.stem}",
-        "type": "metadata",
-        "source": str(filepath),
-        "filename": filepath.name,
+        "type": "json",
+        "source": filepathStr,
         "data": data,
         "valid": len(warnings) == 0,
         "warnings": warnings,

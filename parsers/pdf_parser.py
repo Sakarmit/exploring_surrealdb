@@ -24,9 +24,8 @@ def parse_pdf(filepathStr: str) -> dict:
 
     result = {
         "id": f"lecture:{filepath.stem}",
-        "type": "lecture",
-        "source": str(filepath),
-        "filename": filepath.name,
+        "type": "pdf",
+        "source": filepathStr,
         "title": None,
         "page_count": None,
         "content": None,
