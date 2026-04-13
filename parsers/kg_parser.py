@@ -11,7 +11,13 @@ import hashlib
 # Helper Fuctions
 def stable_id(prefix, value):
     """Standardized hashing"""
-    return f"{prefix}:{hashlib.md5(value.encode()).hexdigest()[:10]}"
+    hash_part = hashlib.md5(value.encode()).hexdigest()[:10]
+    clean_hash = re.sub(r'[^a-zA-Z0-9_]', '_', hash_part)
+    return f"{prefix}:{clean_hash}"
+
+
+def clean_id(val):
+    return re.sub(r'[^a-zA-Z0-9_]', '_', val)
 
 
 def clean_str(val):
@@ -88,7 +94,7 @@ def normalize(rows):
     normalized = []
     
     for i, row in enumerate(rows):
-        course_id = row.get("course_id") or f"row{i}"
+        course_id = clean_id(row.get("course_id") or f"row{i}")
 
         normalized.append({
             "id": f"course:{course_id}",
@@ -170,7 +176,7 @@ def build_graph(records):
 
     def relate(rel, src, dst):
         relations[rel].append({
-            "id": f"{src}->{dst}",
+            "id": stable_id("rel", f"{src}_{dst}"),
             "in": src,
             "out": dst
         })
@@ -227,7 +233,8 @@ def build_graph(records):
 
         # Modules table
         for i, m in enumerate(r["modules"]):
-            mid = f"module:{cid}_{i}"
+            course_id_clean = cid.split(":")[1]
+            mid = f"module:{course_id_clean}_{i}"
             vc, mins, ac = parse_module_summary(m)
 
             tables["module"][mid] = {
