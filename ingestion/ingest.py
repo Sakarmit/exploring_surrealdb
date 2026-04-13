@@ -177,29 +177,29 @@ def run(dry_run: bool = False, use_http: bool = False):
     # 1. Parse all files
     log("--- Phase 1: Parsing ---")
 
-    # lecture = safe_parse("PDF lecture notes", parse_pdf, str(FILES["pdf"]))
-    # assignment = safe_parse("TXT assignment", parse_txt, str(FILES["txt"]))
-    # csv_data = safe_parse("CSV scores", parse_csv, str(FILES["csv"]))
-    # metadata = safe_parse("JSON metadata", parse_json_metadata, str(FILES["json"]))
-    # images = safe_parse("Images directory", parse_images_in_directory, str(FILES["images"]))
-    kg_graph = safe_parse("Knowledge Graph CSV", parse_kg, str(FILES["kg_csv"]),3)
+    lecture = safe_parse("PDF lecture notes", parse_pdf, str(FILES["pdf"]))
+    assignment = safe_parse("TXT assignment", parse_txt, str(FILES["txt"]))
+    csv_data = safe_parse("CSV scores", parse_csv, str(FILES["csv"]))
+    metadata = safe_parse("JSON metadata", parse_json_metadata, str(FILES["json"]))
+    images = safe_parse("Images directory", parse_images_in_directory, str(FILES["images"]))
+    kg_graph = safe_parse("Knowledge Graph CSV", parse_kg, str(FILES["kg_csv"]),10) # NOTE: will only inject 10 of each
 
     # Derive topic list for lecture from metadata if PDF parsing was empty
-    # if lecture and metadata and not lecture.get("topics"):
-    #     materials = metadata.get("data", {}).get("materials", [])
-    #     for m in materials:
-    #         if m.get("type") == "lecture":
-    #             lecture["topics"] = m.get("topics", [])
-    #             break
+    if lecture and metadata and not lecture.get("topics"):
+        materials = metadata.get("data", {}).get("materials", [])
+        for m in materials:
+            if m.get("type") == "lecture":
+                lecture["topics"] = m.get("topics", [])
+                break
 
     if dry_run:
         log("--- DRY RUN: Printing parsed records ---")
         for label, data in [
-            # ("lecture", lecture),
-            # ("assignment", assignment),
-            # ("csv_table", csv_data),
-            # ("metadata", metadata),
-            # ("images", images),            
+            ("lecture", lecture),
+            ("assignment", assignment),
+            ("csv_table", csv_data),
+            ("metadata", metadata),
+            ("images", images),            
             ("kg_graph", kg_graph),
         ]:
             print(f"\n{'='*60}")
@@ -248,27 +248,27 @@ def run(dry_run: bool = False, use_http: bool = False):
     # 3. Insert records
     log("--- Phase 3: Ingesting records ---")
 
-    # if lecture:
-    #     insert(client, "lecture", lecture, use_http)
-    #     log(f"✓ Inserted lecture: {lecture.get('title')}")
+    if lecture:
+        insert(client, "lecture", lecture, use_http)
+        log(f"✓ Inserted lecture: {lecture.get('title')}")
 
-    # if assignment:
-    #     insert(client, "assignment", assignment, use_http)
-    #     log(f"✓ Inserted assignment: {assignment.get('title')}")
+    if assignment:
+        insert(client, "assignment", assignment, use_http)
+        log(f"✓ Inserted assignment: {assignment.get('title')}")
 
-    # if csv_data:
-    #     log(f"Inserting {csv_data['row_count']} student score records …")
-    #     insert_batch(client, "student_score", csv_data["records"], use_http)
-    #     log("✓ Student scores inserted")
+    if csv_data:
+        log(f"Inserting {csv_data['row_count']} student score records …")
+        insert_batch(client, "student_score", csv_data["records"], use_http)
+        log("✓ Student scores inserted")
 
-    # if metadata:
-    #     insert(client, "metadata", metadata, use_http)
-    #     log(f"✓ Inserted metadata (course: {metadata.get('course_id')})")
+    if metadata:
+        insert(client, "metadata", metadata, use_http)
+        log(f"✓ Inserted metadata (course: {metadata.get('course_id')})")
 
-    # if images:
-    #     log(f"Inserting {len(images)} image records …")
-    #     insert_batch(client, "image", images, use_http)
-    #     log("✓ Images inserted")
+    if images:
+        log(f"Inserting {len(images)} image records …")
+        insert_batch(client, "image", images, use_http)
+        log("✓ Images inserted")
 
     if kg_graph:
         log("--- Inserting Knowledge Graph Tables ---")
