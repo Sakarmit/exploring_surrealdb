@@ -112,6 +112,7 @@ def normalize(rows):
             "domain": clean_str(row.get("domain")),
             "subdomain": clean_str(row.get("subdomain")),
 
+            "topics": parse_list(row.get("final_skills")),
             "tools": parse_list(row.get("final_tools")),
             "objectives": parse_list(row.get("learning_objectives")),
             "languages": parse_nested_list(row.get("subtitle_languages")),
@@ -155,6 +156,7 @@ def build_graph(records):
     tables = {
         "course": {},
         "subject": {},
+        "topic": {},
         "tool": {},
         "language": {},
         "instructor": {},
@@ -172,6 +174,8 @@ def build_graph(records):
         "taught_by": [],
         "contains": [],
         "includes": [],
+        "assigns": [],
+        "covers": []
     }
 
     def relate(rel, src, dst):
@@ -207,6 +211,12 @@ def build_graph(records):
                 "subdomain": r["subdomain"]
             }
             relate("belongs_to", cid, sid)
+
+        # Topic table
+        for t in r["topics"]:
+            tid = stable_id("tool", t)
+            tables["topic"][tid] = {"id": tid, "name": t}
+            relate("covers", cid, tid)
             
         # Tools table
         for t in r["tools"]:
@@ -266,7 +276,7 @@ def build_graph(records):
                 "content": lec,
                 "source": r['source']
             }
-            relate("includes", cid, lid)
+            relate("covers", lid, tid)
 
         # assignments table
         for a in r["assignments"]:
@@ -278,6 +288,7 @@ def build_graph(records):
                 "source": r["source"],
                 "content": a
             }
+            relate("assigns", cid, aid)
 
         # discussions table
         for d in r["discussions"]:
