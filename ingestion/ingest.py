@@ -26,6 +26,7 @@ from parsers.txt_parser import parse_txt
 from parsers.csv_parser import parse_csv
 from parsers.json_parser import parse_json_metadata
 from parsers.image_parser import parse_images_in_directory
+from parsers.kg_parser import parse_kg
 from ingestion.surreal_client import SurrealClient
 
 
@@ -39,6 +40,7 @@ FILES = {
     "csv":    DATASET_ROOT / "tables" / "student_scores.csv",
     "json":   DATASET_ROOT / "metadata" / "metadata.json",
     "images": DATASET_ROOT / "images",
+    "kg_csv": DATASET_ROOT / "knowledge_graph" / "cs_dataset.csv",
 }
 
 
@@ -59,19 +61,25 @@ def safe_parse(label: str, fn, *args):
     except Exception as e:
         log(f"✗ Error parsing {label}: {e}")
         return None
+    
+
+def clean_record(data: dict):
+    """Remove None values so SurrealDB doesn't receive NULL."""
+    return {k: v for k, v in data.items() if v is not None}
 
 
 # ── Insert helpers ────────────────────────────────────────────────────────────
 
 def insert(client: SurrealClient, table: str, data: dict, use_http: bool):
     """Insert a single record, choosing SDK vs HTTP path."""
+    data = clean_record(data)  # ← ADD THIS
+
     if use_http:
         res = client.http_create(table, data)
     else:
         res = client.create_sync(table, data)
-    
-    print(f'[DEBUG] Insert {table} -> {res}')
 
+    print(f'[DEBUG] Insert {table} -> {res}')
     return res
 
 
@@ -83,6 +91,29 @@ def insert_batch(client: SurrealClient, table: str, records: list[dict], use_htt
             log(f"  ✗ Failed to insert {rec.get('id', '?')}: {e}")
 
 
+def insert_relations(client: SurrealClient, relations: dict, use_http: bool):
+    """Insert graph edges using RELATE statements."""
+    for rel_name, edges in relations.items():
+        if not edges:
+            continue
+
+        log(f"Inserting {len(edges)} '{rel_name}' relations …")
+
+        for edge in edges:
+            try:
+                query = f"""
+                RELATE {edge['in']} -> {rel_name} -> {edge['out']}
+                CONTENT {{"id": "{edge['id']}" }};
+                """
+
+                if use_http:
+                    client.http_query(query)
+                else:
+                    client.query_sync(query)
+
+            except Exception as e:
+                log(f"  ✗ Failed relation {edge['id']}: {e}")
+
 # ── Graph relationship helpers ────────────────────────────────────────────────
 
 GRAPH_RELATIONS_SQL = """
@@ -91,7 +122,7 @@ LET $topics = SELECT topics FROM lecture;
 FOR $lecture IN (SELECT id, topics FROM lecture) {
     LET $lid = $lecture.id;
     FOR $topic IN $lecture.topics {
-        LET $tid = type::thing('topic', string::lowercase(string::replace($topic, ' ', '_')));
+        LET $tid = type::record('topic', string::lowercase(string::replace($topic, ' ', '_')));
         INSERT IGNORE INTO topic { id: $tid, name: $topic };
         RELATE $lid -> covers -> $tid;
     }
@@ -101,7 +132,7 @@ FOR $lecture IN (SELECT id, topics FROM lecture) {
 FOR $asgn IN (SELECT id, concepts FROM assignment) {
     LET $aid = $asgn.id;
     FOR $concept IN $asgn.concepts {
-        LET $tid = type::thing('topic', string::lowercase(string::replace($concept, ' ', '_')));
+        LET $tid = type::record('topic', string::lowercase(string::replace($concept, ' ', '_')));
         INSERT IGNORE INTO topic { id: $tid, name: $concept };
         RELATE $aid -> requires -> $tid;
     }
@@ -117,7 +148,7 @@ FOR $mat IN (SELECT * FROM metadata) {
                             ELSE NULL END;
         IF $target_table != NULL {
             LET $mid = $mat.id;
-            LET $tid = type::thing($target_table, string::replace($m.filename, '.', '_'));
+            LET $tid = type::record($target_table, string::replace($m.filename, '.', '_'));
             RELATE $mid -> describes -> $tid;
         }
     }
@@ -151,6 +182,7 @@ def run(dry_run: bool = False, use_http: bool = False):
     csv_data = safe_parse("CSV scores", parse_csv, str(FILES["csv"]))
     metadata = safe_parse("JSON metadata", parse_json_metadata, str(FILES["json"]))
     images = safe_parse("Images directory", parse_images_in_directory, str(FILES["images"]))
+    kg_graph = safe_parse("Knowledge Graph CSV", parse_kg, str(FILES["kg_csv"]))
 
     # Derive topic list for lecture from metadata if PDF parsing was empty
     if lecture and metadata and not lecture.get("topics"):
@@ -167,7 +199,8 @@ def run(dry_run: bool = False, use_http: bool = False):
             ("assignment", assignment),
             ("csv_table", csv_data),
             ("metadata", metadata),
-            ("images", images),
+            ("images", images),            
+            ("kg_graph", kg_graph),
         ]:
             print(f"\n{'='*60}")
             print(f"  {label.upper()}")
@@ -176,6 +209,11 @@ def run(dry_run: bool = False, use_http: bool = False):
                 print("  [Not parsed]")
             elif isinstance(data, list):
                 print(json.dumps(data, indent=2, default=str))
+            elif label == "kg_graph" and data:
+                print(json.dumps({
+                    "tables": {k: len(v) for k, v in data["tables"].items()},
+                    "relations": {k: len(v) for k, v in data["relations"].items()}
+                }, indent=2))
             else:
                 # Truncate long content fields for readability
                 display = {k: (v[:200] + "…" if isinstance(v, str) and len(v) > 200 else v)
@@ -231,6 +269,22 @@ def run(dry_run: bool = False, use_http: bool = False):
         log(f"Inserting {len(images)} image records …")
         insert_batch(client, "image", images, use_http)
         log("✓ Images inserted")
+
+    if kg_graph:
+        log("--- Inserting Knowledge Graph Tables ---")
+
+        # Insert all tables
+        for table_name, records in kg_graph["tables"].items():
+            if not records:
+                continue
+            log(f"Inserting {len(records)} records into '{table_name}' …")
+            insert_batch(client, table_name, records, use_http)
+
+        log("✓ KG tables inserted")
+
+        log("--- Inserting Knowledge Graph Relations ---")
+        insert_relations(client, kg_graph["relations"], use_http)
+        log("✓ KG relations inserted")
 
     # 4. Create graph relationships
     log("--- Phase 4: Graph Relationships ---")

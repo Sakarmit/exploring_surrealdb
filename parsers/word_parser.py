@@ -26,8 +26,7 @@ def parse_word(filepathStr: str) -> dict:
     result = {
         "id": f"lecture:{filepath.stem}",
         "type": "lecture",
-        "source": str(filepath),
-        "filename": filepath.name,
+        "source": filepathStr,
         "title": None,
         "content": None,
         "topics": [],

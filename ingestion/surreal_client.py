@@ -123,6 +123,7 @@ class SurrealClient:
             headers=self._http_headers(),
             data=sql,
         )
+        print(resp.text)
         resp.raise_for_status()
         return resp.json()
 
