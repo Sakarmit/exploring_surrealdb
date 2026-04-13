@@ -221,9 +221,9 @@ DEFINE INDEX discussion_message_idx ON discussion FIELDS message;
 -- GRAPH RELATIONS (compatible with ingestion.py)
 -- ============================================================
 
-DEFINE TABLE covers SCHEMAFULL TYPE RELATION;
-DEFINE TABLE requires SCHEMAFULL TYPE RELATION;
-DEFINE TABLE describes SCHEMAFULL TYPE RELATION;
+DEFINE TABLE covers SCHEMAFULL TYPE RELATION
+    IN course | lecture | assignment
+    OUT topic;
 
 DEFINE TABLE belongs_to SCHEMAFULL TYPE RELATION IN course OUT subject;
 DEFINE TABLE uses SCHEMAFULL TYPE RELATION IN course OUT tool;
@@ -231,6 +231,7 @@ DEFINE TABLE taught_in SCHEMAFULL TYPE RELATION IN course OUT language;
 DEFINE TABLE taught_by SCHEMAFULL TYPE RELATION IN course OUT instructor;
 DEFINE TABLE contains SCHEMAFULL TYPE RELATION IN course OUT module;
 DEFINE TABLE includes SCHEMAFULL TYPE RELATION IN course OUT lecture;
+DEFINE TABLE assigns SCHEMAFULL TYPE RELATION IN course OUT assignment;
 
 DEFINE TABLE assignment_grade SCHEMAFULL TYPE RELATION IN student_score OUT assignment;
 DEFINE TABLE student_enrolled_in SCHEMAFULL TYPE RELATION IN student OUT course;
