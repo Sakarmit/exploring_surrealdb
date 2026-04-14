@@ -21,7 +21,7 @@ from pathlib import Path
 # Allow running from project root
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from parsers.code_workout_parser import parse_students, parse_submissions
+from parsers.code_workout_parser import parse_problem_concepts, parse_students, parse_submissions
 from parsers.pdf_parser import parse_pdf
 from parsers.txt_parser import parse_txt
 from parsers.csv_parser import parse_csv
@@ -42,8 +42,9 @@ FILES = {
     "json":   DATASET_ROOT / "metadata" / "metadata.json",
     "images": DATASET_ROOT / "images",
     "kg_csv": DATASET_ROOT / "knowledge_graph" / "cs_dataset.csv",
-    "students": DATASET_ROOT / "code_workout_data"/ "studentIDMapping_canvas_codeworkout.csv",
-    "submissions": DATASET_ROOT / "code_workout_data" / "MainTable.csv",
+    "cw_students": DATASET_ROOT / "code_workout_data"/ "studentIDMapping_canvas_codeworkout.csv",
+    "cw_submissions": DATASET_ROOT / "code_workout_data" / "MainTable.csv",
+    "cw_concepts": DATASET_ROOT / "code_workout_data" / "matrix_interation_concepts_outcomes_w_ori_order.csv"
 }
 
 
@@ -205,8 +206,9 @@ def run(dry_run: bool = False, use_http: bool = False):
     metadata = safe_parse("JSON metadata", parse_json_metadata, str(FILES["json"]))
     images = safe_parse("Images directory", parse_images_in_directory, str(FILES["images"]))
     kg_graph = safe_parse("Knowledge Graph CSV", parse_kg, str(FILES["kg_csv"]),10) # NOTE: will only inject 10 of each
-    students = safe_parse("Code Workout Students", parse_students, str(FILES["students"]))
-    submissions = safe_parse("Code Workout Submissions", parse_submissions, str(FILES["submissions"]), only_section_ids=["1266"])
+    students = safe_parse("Code Workout Students", parse_students, str(FILES["cw_students"]))
+    submissions = safe_parse("Code Workout Submissions", parse_submissions, str(FILES["cw_submissions"]), only_section_ids=["1266"])
+    cw_problem_concepts = safe_parse("Code Workout Problem Concepts", parse_problem_concepts, str(FILES["cw_concepts"]))
 
     # Derive topic list for lecture from metadata if PDF parsing was empty
     if lecture and metadata and not lecture.get("topics"):
@@ -226,7 +228,8 @@ def run(dry_run: bool = False, use_http: bool = False):
             ("images", images),            
             ("kg_graph", kg_graph),
             ("students", students),
-            ("submissions", submissions)
+            ("submissions", submissions),
+            ("cw_problem_concepts", cw_problem_concepts)
         ]:
             print(f"\n{'='*60}")
             print(f"  {label.upper()}")
@@ -274,29 +277,29 @@ def run(dry_run: bool = False, use_http: bool = False):
     # 3. Insert records
     log("--- Phase 3: Ingesting records ---")
 
-    if lecture:
+    if lecture and False:
         insert(client, "lecture", lecture, use_http)
         log(f"✓ Inserted lecture: {lecture.get('title')}")
 
-    if assignment:
+    if assignment and False:
         insert(client, "assignment", assignment, use_http)
         log(f"✓ Inserted assignment: {assignment.get('title')}")
 
-    if csv_data:
+    if csv_data and False:
         log(f"Inserting {csv_data['row_count']} student score records …")
         insert_batch(client, "student_score", csv_data["records"], use_http)
         log("✓ Student scores inserted")
 
-    if metadata:
+    if metadata and False:
         insert(client, "metadata", metadata, use_http)
         log(f"✓ Inserted metadata (course: {metadata.get('course_id')})")
 
-    if images:
+    if images and False:
         log(f"Inserting {len(images)} image records …")
         insert_batch(client, "image", images, use_http)
         log("✓ Images inserted")
 
-    if kg_graph:
+    if kg_graph and False:
         log("--- Inserting Knowledge Graph Tables ---")
 
         # Insert all tables
@@ -312,15 +315,20 @@ def run(dry_run: bool = False, use_http: bool = False):
         insert_relations(client, kg_graph["relations"], use_http)
         log("✓ KG relations inserted")
 
-    if students:
+    if students and False:
         log(f"Inserting {len(students)} student records …")
         insert_batch_bulk(client, "student", students, use_http, bulk_size=100)
         log("✓ Code Workout students inserted")
 
-    if submissions:
+    if submissions and False:
         log(f"Inserting {len(submissions)} code workout submission records …")
         insert_batch_bulk(client, "submission", submissions, use_http, bulk_size=5000)
         log("✓ Code Workout submissions inserted")
+    
+    if cw_problem_concepts:
+        log(f"Inserting {len(cw_problem_concepts)} code workout problem records …")
+        insert_batch_bulk(client, "cw_problem", cw_problem_concepts, use_http, bulk_size=100)
+        log("✓ Code Workout problems inserted")
 
     # 4. Create graph relationships
     log("--- Phase 4: Graph Relationships ---")

@@ -34,3 +34,32 @@ def parse_submissions(file_path, only_section_ids=None):
                 submission["score"] = float_score
             main_table.append(submission)
     return main_table
+
+def parse_problem_concepts(file_path):
+    problems = []
+    checked_problem_ids = set()
+    with open(file_path, mode='r', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            # Avoid duplicates in case the same problem appears multiple times in the dataset
+            if row['ProblemID'] in checked_problem_ids:
+                continue
+            checked_problem_ids.add(row['ProblemID'])
+
+            data = {
+                'id': row['ProblemID']
+            }
+            # Extract concepts based on columns that have a value of 1.0, excluding other data columns
+            concepts = []
+            for key, value in row.items():
+                if key not in ['SubjectID', 'ProblemID', 'Attempt', 'Score','CodeStateID']:
+                    try:
+                        float_value = float(value)
+                        if float_value == 1.0:
+                            concepts.append(key)
+                    except ValueError:
+                        pass
+            data['concepts'] = concepts
+
+            problems.append(data)
+    return problems

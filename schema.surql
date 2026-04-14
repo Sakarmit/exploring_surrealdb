@@ -226,6 +226,13 @@ DEFINE FIELD student_id    ON submission TYPE string;
 DEFINE FIELD score         ON submission TYPE option<float>;
 
 -- ============================================================
+-- TABLE: cw_problem # Table for coding problems from code workout dataset
+-- ============================================================
+DEFINE TABLE cw_problem SCHEMALESS;
+DEFINE FIELD id          ON cw_problem TYPE string;
+DEFINE FIELD concepts     ON cw_problem TYPE array<string>;
+
+-- ============================================================
 -- GRAPH RELATIONS (compatible with ingestion.py)
 -- ============================================================
 
