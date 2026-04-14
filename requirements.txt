@@ -15,3 +15,6 @@ requests>=2.31.0
 # Jupyter notebooks (optional, for demo_notebook.py)
 # jupytext>=1.16.0     # converts .py notebook to .ipynb
 # jupyter>=1.0.0
+
+# Streamlit (optional, for rule_queries_interface.py)
+streamlit>=1.30.0

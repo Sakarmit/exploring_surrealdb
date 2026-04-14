@@ -99,11 +99,11 @@ def insert_batch_bulk(client: SurrealClient, table: str, records: list[dict], us
         try:
             if use_http:
                 res = client.http_create_bulk(table, batch)
-                print(f'[DEBUG] Bulk insert {table} -> {res}')
+                #print(f'[DEBUG] Bulk insert {table} -> {res}')
             else:
                 for record in batch:
                     client.create_sync(table, record)
-                    print(f'[DEBUG] Insert {table} -> {record}')
+                    #print(f'[DEBUG] Insert {table} -> {record}')
             log(f"✓ Batch inserted {i+len(batch)}/{len(records)} records")
         except Exception as e:
             log(f"✗ Batch insert error: {e}")

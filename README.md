@@ -35,19 +35,21 @@ python -m ingestion.ingest --dry-run
 
 # Full ingestion via HTTP REST
 python -m ingestion.ingest --http
-
+```
+<!-- 
 # Full ingestion via Python SDK
 python -m ingestion.ingest
-```
+ -->
 
 ### 5. Run queries
 ```bash
-# Run all 7 queries
+streamlit run ./queries/run_queries_interface.py
+```
+<!-- # Run all 7 queries
 python -m queries.run_queries --http
 
 # Run a specific query (e.g. query 4 — graph traversal)
-python -m queries.run_queries --http --query 4
-```
+python -m queries.run_queries --http --query 4 -->
 
 ### 6. Open demo notebook
 ```bash

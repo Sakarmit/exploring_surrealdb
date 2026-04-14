@@ -25,3 +25,6 @@ venv.bak/
 
 # Streamlit
 .streamlit/secrets.toml
+
+#dataset
+dataset/code_workout_data/*
