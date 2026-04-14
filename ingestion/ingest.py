@@ -277,29 +277,29 @@ def run(dry_run: bool = False, use_http: bool = False):
     # 3. Insert records
     log("--- Phase 3: Ingesting records ---")
 
-    if lecture and False:
+    if lecture:
         insert(client, "lecture", lecture, use_http)
         log(f"✓ Inserted lecture: {lecture.get('title')}")
 
-    if assignment and False:
+    if assignment:
         insert(client, "assignment", assignment, use_http)
         log(f"✓ Inserted assignment: {assignment.get('title')}")
 
-    if csv_data and False:
+    if csv_data:
         log(f"Inserting {csv_data['row_count']} student score records …")
         insert_batch(client, "student_score", csv_data["records"], use_http)
         log("✓ Student scores inserted")
 
-    if metadata and False:
+    if metadata:
         insert(client, "metadata", metadata, use_http)
         log(f"✓ Inserted metadata (course: {metadata.get('course_id')})")
 
-    if images and False:
+    if images:
         log(f"Inserting {len(images)} image records …")
         insert_batch(client, "image", images, use_http)
         log("✓ Images inserted")
 
-    if kg_graph and False:
+    if kg_graph:
         log("--- Inserting Knowledge Graph Tables ---")
 
         # Insert all tables
@@ -315,12 +315,12 @@ def run(dry_run: bool = False, use_http: bool = False):
         insert_relations(client, kg_graph["relations"], use_http)
         log("✓ KG relations inserted")
 
-    if students and False:
+    if students:
         log(f"Inserting {len(students)} student records …")
         insert_batch_bulk(client, "student", students, use_http, bulk_size=100)
         log("✓ Code Workout students inserted")
 
-    if submissions and False:
+    if submissions:
         log(f"Inserting {len(submissions)} code workout submission records …")
         insert_batch_bulk(client, "submission", submissions, use_http, bulk_size=5000)
         log("✓ Code Workout submissions inserted")
