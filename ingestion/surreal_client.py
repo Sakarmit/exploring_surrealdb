@@ -6,8 +6,8 @@ Falls back to the REST HTTP API if the SDK is unavailable.
 
 from __future__ import annotations
 import json
-import os
 from typing import Any
+import requests
 
 
 # ── Try the official SDK first ────────────────────────────────────────────────
@@ -104,7 +104,6 @@ class SurrealClient:
 
     def http_create(self, table: str, data: dict) -> Any:
         """Create a record via HTTP REST API (no SDK needed)."""
-        import requests  # type: ignore
         record_id = data.get("id", "")
         # Strip table prefix if present (e.g. "lecture:notes1" -> "notes1")
         if ":" in record_id:
@@ -112,6 +111,27 @@ class SurrealClient:
         url = f"{self.url}/key/{table}/{record_id}"
         payload = {k: v for k, v in data.items() if k != "id"}
         resp = requests.post(url, headers=self._http_headers(), json=payload)
+        resp.raise_for_status()
+        return resp.json()
+
+    def http_create_bulk(self, table: str, records: list[dict]) -> Any:
+        """Bulk insert records via HTTP REST API."""
+        # Strip table prefix from IDs if present (e.g. "lecture:notes1" -> "notes1")
+        cleaned = []
+        for data in records:
+            row = dict(data)
+            if "id" in row and ":" in str(row["id"]):
+                row["id"] = str(row["id"]).split(":", 1)[1]
+            cleaned.append(row)
+
+        # INSERT INTO accepts an array of objects
+        query = f"INSERT INTO {table} {json.dumps(cleaned)};"
+
+        resp = requests.post(
+            f"{self.url}/sql",
+            headers=self._http_headers(),
+            data=query,
+        )
         resp.raise_for_status()
         return resp.json()
 

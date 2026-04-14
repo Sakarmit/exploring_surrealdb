@@ -21,6 +21,7 @@ from pathlib import Path
 # Allow running from project root
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from parsers.code_workout_parser import parse_students, parse_submissions
 from parsers.pdf_parser import parse_pdf
 from parsers.txt_parser import parse_txt
 from parsers.csv_parser import parse_csv
@@ -41,6 +42,8 @@ FILES = {
     "json":   DATASET_ROOT / "metadata" / "metadata.json",
     "images": DATASET_ROOT / "images",
     "kg_csv": DATASET_ROOT / "knowledge_graph" / "cs_dataset.csv",
+    "students": DATASET_ROOT / "code_workout_data"/ "studentIDMapping_canvas_codeworkout.csv",
+    "submissions": DATASET_ROOT / "code_workout_data" / "MainTable.csv",
 }
 
 
@@ -50,9 +53,9 @@ def log(msg: str):
     print(f"[ingest] {msg}")
 
 
-def safe_parse(label: str, fn, *args):
+def safe_parse(label: str, fn, *args, **kwargs):
     try:
-        result = fn(*args)
+        result = fn(*args, **kwargs)
         log(f"✓ Parsed {label}")
         return result
     except FileNotFoundError as e:
@@ -82,13 +85,28 @@ def insert(client: SurrealClient, table: str, data: dict, use_http: bool):
     print(f'[DEBUG] Insert {table} -> {res}')
     return res
 
-
 def insert_batch(client: SurrealClient, table: str, records: list[dict], use_http: bool):
     for rec in records:
         try:
             insert(client, table, rec, use_http)
         except Exception as e:
             log(f"  ✗ Failed to insert {rec.get('id', '?')}: {e}")
+
+def insert_batch_bulk(client: SurrealClient, table: str, records: list[dict], use_http: bool, bulk_size: int = 10):
+    for i in range(0, len(records), bulk_size):
+        batch = records[i:i+bulk_size]
+        log(f"Inserting batch of {len(batch)} records into '{table}' …")
+        try:
+            if use_http:
+                res = client.http_create_bulk(table, batch)
+                print(f'[DEBUG] Bulk insert {table} -> {res}')
+            else:
+                for record in batch:
+                    client.create_sync(table, record)
+                    print(f'[DEBUG] Insert {table} -> {record}')
+            log(f"✓ Batch inserted {i+len(batch)}/{len(records)} records")
+        except Exception as e:
+            log(f"✗ Batch insert error: {e}")
 
 
 def insert_relations(client: SurrealClient, relations: dict, use_http: bool):
@@ -177,12 +195,18 @@ def run(dry_run: bool = False, use_http: bool = False):
     # 1. Parse all files
     log("--- Phase 1: Parsing ---")
 
+    for label, path in FILES.items():
+        if not path.exists():
+            raise FileNotFoundError(f"{label} file not found: {path}")
+
     lecture = safe_parse("PDF lecture notes", parse_pdf, str(FILES["pdf"]))
     assignment = safe_parse("TXT assignment", parse_txt, str(FILES["txt"]))
     csv_data = safe_parse("CSV scores", parse_csv, str(FILES["csv"]))
     metadata = safe_parse("JSON metadata", parse_json_metadata, str(FILES["json"]))
     images = safe_parse("Images directory", parse_images_in_directory, str(FILES["images"]))
     kg_graph = safe_parse("Knowledge Graph CSV", parse_kg, str(FILES["kg_csv"]),10) # NOTE: will only inject 10 of each
+    students = safe_parse("Code Workout Students", parse_students, str(FILES["students"]))
+    submissions = safe_parse("Code Workout Submissions", parse_submissions, str(FILES["submissions"]), only_section_ids=["1266"])
 
     # Derive topic list for lecture from metadata if PDF parsing was empty
     if lecture and metadata and not lecture.get("topics"):
@@ -201,6 +225,8 @@ def run(dry_run: bool = False, use_http: bool = False):
             ("metadata", metadata),
             ("images", images),            
             ("kg_graph", kg_graph),
+            ("students", students),
+            ("submissions", submissions)
         ]:
             print(f"\n{'='*60}")
             print(f"  {label.upper()}")
@@ -285,6 +311,16 @@ def run(dry_run: bool = False, use_http: bool = False):
         log("--- Inserting Knowledge Graph Relations ---")
         insert_relations(client, kg_graph["relations"], use_http)
         log("✓ KG relations inserted")
+
+    if students:
+        log(f"Inserting {len(students)} student records …")
+        insert_batch_bulk(client, "student", students, use_http, bulk_size=100)
+        log("✓ Code Workout students inserted")
+
+    if submissions:
+        log(f"Inserting {len(submissions)} code workout submission records …")
+        insert_batch_bulk(client, "submission", submissions, use_http, bulk_size=5000)
+        log("✓ Code Workout submissions inserted")
 
     # 4. Create graph relationships
     log("--- Phase 4: Graph Relationships ---")

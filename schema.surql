@@ -164,8 +164,8 @@ DEFINE FIELD assignment_count   ON module TYPE option<int>;
 DEFINE TABLE student SCHEMALESS;
 DEFINE FIELD id    ON student TYPE string;
 DEFINE FIELD name  ON student TYPE string;
-DEFINE FIELD email ON student TYPE string;
-DEFINE FIELD major ON student TYPE string;
+DEFINE FIELD email ON student TYPE option<string>;
+DEFINE FIELD major ON student TYPE option<string>;
 
 -- ============================================================
 -- TABLE: student_score
@@ -216,6 +216,14 @@ DEFINE FIELD message ON discussion TYPE string;
 
 DEFINE INDEX discussion_title_idx   ON discussion FIELDS title;
 DEFINE INDEX discussion_message_idx ON discussion FIELDS message;
+
+-- ============================================================
+-- TABLE: submission
+-- ============================================================
+DEFINE TABLE submission SCHEMALESS;
+DEFINE FIELD id            ON submission TYPE string;
+DEFINE FIELD student_id    ON submission TYPE string;
+DEFINE FIELD score         ON submission TYPE option<float>;
 
 -- ============================================================
 -- GRAPH RELATIONS (compatible with ingestion.py)
