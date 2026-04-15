@@ -28,3 +28,4 @@ venv.bak/
 
 #dataset
 dataset/code_workout_data/*
+!dataset/code_workout_data/Readme.txt

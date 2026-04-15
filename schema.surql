@@ -250,3 +250,6 @@ DEFINE TABLE assigns SCHEMAFULL TYPE RELATION IN course OUT assignment;
 
 DEFINE TABLE assignment_grade SCHEMAFULL TYPE RELATION IN student_score OUT assignment;
 DEFINE TABLE student_enrolled_in SCHEMAFULL TYPE RELATION IN student OUT course;
+
+DEFINE TABLE submitted_by SCHEMAFULL TYPE RELATION IN submission OUT student;
+DEFINE TABLE solves SCHEMAFULL TYPE RELATION IN submission OUT cw_problem;
