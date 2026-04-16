@@ -26,9 +26,12 @@ def parse_submissions(file_path, only_section_ids=None):
             submission = {"student_id": row['SubjectID'], 
                            "class_id": class_id, 
                            "problem_id": row['ProblemID'], 
+                           "server_timestamp": row['ServerTimestamp'],
                            "code_state_id": row['CodeStateID'], 
                            "event_type": row['EventType'], 
-                           "result": row['Compile.Result'], 
+                           "result": row['Compile.Result'],
+                           "compile_message_type": row['CompileMessageType'],
+                           "compile_message": row['CompileMessageData'],
                             "order": row['Order']}
             if float_score is not None:
                 submission["score"] = float_score

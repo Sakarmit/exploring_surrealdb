@@ -198,6 +198,22 @@ def create_graph_relations(client: SurrealClient, use_http: bool):
     except Exception as e:
         log(f"✗ Graph relations error (non-fatal): {e}")
 
+EXTRA_PROCESSING_SQL = """
+    -- Convert server_timestamp strings to actual datetime values (if needed) in the submission table
+   UPDATE submission SET server_timestamp = <datetime>(string::concat(server_timestamp, 'Z'));
+"""
+
+def final_processing(client: SurrealClient, use_http: bool):
+    """Run any extra processing steps after insertion, such as data transformations or cleanup."""
+    log("Running final processing steps …")
+    try:
+        if use_http:
+            client.http_query(EXTRA_PROCESSING_SQL)
+        else:
+            client.query_sync(EXTRA_PROCESSING_SQL)
+        log("✓ Final processing completed")
+    except Exception as e:
+        log(f"✗ Final processing error (non-fatal): {e}")
 
 # ── Main ingestion flow ───────────────────────────────────────────────────────
 
@@ -333,7 +349,7 @@ def run(dry_run: bool = False, use_http: bool = False):
 
     if submissions:
         log(f"Inserting {len(submissions)} code workout submission records …")
-        insert_batch_bulk(client, "submission", submissions, use_http, bulk_size=5000)
+        insert_batch_bulk(client, "submission", submissions, use_http, bulk_size=3000)
         log("✓ Code Workout submissions inserted")
     
     if cw_problem_concepts:
@@ -344,6 +360,9 @@ def run(dry_run: bool = False, use_http: bool = False):
     # 4. Create graph relationships
     log("--- Phase 4: Graph Relationships ---")
     create_graph_relations(client, use_http)
+
+    log("--- Phase 5: Extra Processing ---")
+    final_processing(client, use_http)
 
     # 5. Cleanup
     if not use_http:

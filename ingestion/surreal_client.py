@@ -135,7 +135,7 @@ class SurrealClient:
         resp.raise_for_status()
         return resp.json()
 
-    def http_query(self, sql: str) -> Any:
+    def http_query(self, sql: str, raise_error: bool = True) -> Any:
         """Run a SurrealQL query via HTTP REST API."""
         import requests  # type: ignore
         resp = requests.post(
@@ -144,7 +144,8 @@ class SurrealClient:
             data=sql,
         )
         print(resp.text)
-        resp.raise_for_status()
+        if raise_error:
+            resp.raise_for_status()
         return resp.json()
 
     def execute_schema_file(self, schema_path: str):
