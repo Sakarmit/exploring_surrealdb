@@ -13,9 +13,14 @@ QUERIES = {
         "input": [],
         "query": "SELECT * FROM student;"
     },
-    "Query Assignments": {
+    "Retrieve the full names of students who have the highest total number of submission attempts.": {
         "input": [],
-        "query": "SELECT * FROM assignment;"
+        "query": """SELECT student_id,type::record('student',student_id).name as full_name,total_attempts
+        FROM (SELECT student_id,
+        count() AS total_attempts
+        FROM submission
+        GROUP BY student_id
+        ORDER BY total_attempts DESC);"""
     },
     "Query Submission History": {
         "input": ["student_id", "problem_id"],
