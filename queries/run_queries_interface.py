@@ -18,14 +18,14 @@ QUERIES = {
         "query": "SELECT * FROM assignment;"
     },
     "Query Submission History": {
-    "input": ["student_id", "problem_id"],
-    "query": """
-        SELECT server_timestamp, event_type, result, compile_message_type, compile_message
-        FROM submission
-        WHERE ->submitted_by->(SELECT id FROM student WHERE sis_id = '{student_id}')
-        AND problem_id = '{problem_id}'
-        ORDER BY server_timestamp ASC;
-    """
+        "input": ["student_id", "problem_id"],
+        "query": """
+            SELECT server_timestamp, event_type, result, compile_message_type, compile_message
+            FROM submission
+            WHERE ->submitted_by->(SELECT id FROM student WHERE sis_id = '{student_id}')
+            AND problem_id = '{problem_id}'
+            ORDER BY server_timestamp ASC;
+        """
     },
     "Given a Problem ID and a Student SIS Login ID, retrieve the chronological sequence of actions along with their statuses from the student's CodeWorkout interactions.": {
         "input": ["student_id", "problem_id"],
@@ -35,6 +35,14 @@ QUERIES = {
             WHERE ->submitted_by->(SELECT id FROM student WHERE sis_id = '{student_id}')
             AND problem_id = '{problem_id}'
             ORDER BY server_timestamp ASC;
+        """
+    },
+    "Given a Problem ID, retrieve all learning concepts assessed by that problem": {
+        "input": ["problem_id"],
+        "query": """
+            SELECT VALUE concepts
+            FROM cw_problem
+            WHERE id = cw_problem:`{problem_id}`;
         """
     }
 }
