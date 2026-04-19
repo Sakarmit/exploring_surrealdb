@@ -9,9 +9,13 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from ingestion.surreal_client import SurrealClient
 
 QUERIES = {
-    "Query Students": {
+    "Retrieve the full names of students who have never attempted any CodeWorkout problems.": {
         "input": [],
-        "query": "SELECT * FROM student;"
+        "query": """
+            SELECT name AS full_name
+            FROM student
+            WHERE id NOT IN (SELECT VALUE student_id FROM submission);
+        """
     },
     "Retrieve the full names of students who have the highest total number of submission attempts.": {
         "input": [],
@@ -21,16 +25,6 @@ QUERIES = {
         FROM submission
         GROUP BY student_id
         ORDER BY total_attempts DESC);"""
-    },
-    "Query Submission History": {
-        "input": ["student_id", "problem_id"],
-        "query": """
-            SELECT server_timestamp, event_type, result, compile_message_type, compile_message
-            FROM submission
-            WHERE ->submitted_by->(SELECT id FROM student WHERE sis_id = '{student_id}')
-            AND problem_id = '{problem_id}'
-            ORDER BY server_timestamp ASC;
-        """
     },
     "Given a Problem ID and a Student SIS Login ID, retrieve the chronological sequence of actions along with their statuses from the student's CodeWorkout interactions.": {
         "input": ["student_id", "problem_id"],
