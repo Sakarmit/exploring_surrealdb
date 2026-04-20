@@ -176,8 +176,8 @@ FOR $mat IN (SELECT * FROM metadata) {
 -- Link submissions to students and problems
 FOR $sub IN (SELECT id, student_id, problem_id FROM submission) {
     LET $sid = $sub.id;
-    LET $student_id = type::thing('student', string::lowercase(string::replace($sub.student_id, ' ', '')));
-    LET $problem_id = type::thing('cw_problem', string::lowercase(string::replace($sub.problem_id, ' ', '')));
+    LET $student_id = type::record('student', string::lowercase(string::replace($sub.student_id, ' ', '')));
+    LET $problem_id = type::record('cw_problem', string::lowercase(string::replace($sub.problem_id, ' ', '')));
     IF $student_id != NULL AND $problem_id != NULL {
         RELATE $sid -> submitted_by -> $student_id;
         RELATE $sid -> solves -> $problem_id;

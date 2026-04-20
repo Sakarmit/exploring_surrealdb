@@ -65,10 +65,14 @@ def run_selected_query(query_name, input_values):
             # Replace placeholders in the query with actual input values
             query = query.replace(f"{{{key}}}", value)
         result = client.http_query(query, False)
-        if isinstance(result, dict) and result['code'] != 200:
-            st.warning(f"Error executing query: {result.get('information', 'Unknown error')}")
+        if isinstance(result, list):
+            result = result[0]
+
+        if isinstance(result, dict) and (result.get('code', 200) != 200 or result.get('status') != 'OK'):
+            st.warning(f"Error executing query: {result.get('information', result.get('result', 'Unknown error'))}")
             return pd.DataFrame()  # Return an empty DataFrame for display purposes
-        return format_query_to_dataframe(result[0]['result'])
+        print(f"Raw query result: {result}")
+        return format_query_to_dataframe(result['result'])
     else:
         return "Query not found."
 
